@@ -11,6 +11,7 @@ import com.bumptech.glide.Glide
 import com.currencyapp.R
 import com.currencyapp.domain.model.Currency
 import com.currencyapp.presentation.util.afterTextChanged
+import com.currencyapp.presentation.util.formatToCurrency
 import kotlinx.android.synthetic.main.layout_currency_list_item.view.*
 
 class CurrencyListAdapter(
@@ -20,9 +21,6 @@ class CurrencyListAdapter(
     CurrencyDiffCallback
 ) {
 
-    private companion object {
-        const val CURRENCY_FORMAT = "%.2f"
-    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         return ViewHolder(
@@ -42,15 +40,13 @@ class CurrencyListAdapter(
             itemView.tvCurrency.text = currency.code
             itemView.tvCurrencyCountry.text = currency.country
             itemView.ivThumbnail.loadImageFromRate(currency.iconUrl)
-            //TODO: This is not reponsability of the Adapter, formating. Create a extension for it
-            itemView.etRate.setText(CURRENCY_FORMAT.format(currency.rate))
+            itemView.etRate.setText(currency.rate.toString().formatToCurrency())
             itemView.setOnClickListener {
                 clickListener.invoke(currency)
             }
             itemView.etRate.afterTextChanged {
                 if (isBaseCurrency) {
-                    //TODO:  remove it to text change listener
-                    textListener.invoke(it.toString().replace("$", ""))
+                    textListener.invoke(it)
                 }
             }
         }
