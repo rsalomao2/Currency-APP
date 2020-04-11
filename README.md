@@ -4,7 +4,6 @@ Currency APP is an app developed to show some of my skills applied in consuming 
 * Kotlin
 * Koin
 * Coroutine
-* Databinding
 * LiveData
 * Retrofit2
 * OkHttp
