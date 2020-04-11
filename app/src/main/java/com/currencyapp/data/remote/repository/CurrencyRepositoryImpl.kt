@@ -11,6 +11,7 @@ import com.currencyapp.domain.model.Status
 import com.google.gson.Gson
 import kotlinx.coroutines.withContext
 import retrofit2.HttpException
+import java.io.IOException
 import java.net.UnknownHostException
 
 class CurrencyRepositoryImpl(
@@ -26,9 +27,11 @@ class CurrencyRepositoryImpl(
                 Status.Success(extractCurrencyList(response))
             } catch (e: HttpException) {
                 Status.NetworkError
-            }catch (e: UnknownHostException){
+            } catch (e: UnknownHostException) {
                 Status.NetworkError
-            }catch (e: Exception) {
+            } catch (e: IOException) {
+                Status.NetworkError
+            } catch (e: Exception) {
                 Status.Error(e.message ?: "Unknown error")
             }
         }
