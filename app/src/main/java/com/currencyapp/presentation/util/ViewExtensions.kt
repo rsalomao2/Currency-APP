@@ -10,12 +10,8 @@ import java.util.*
 
 internal fun EditText.afterTextChanged(action: (String) -> Unit): TextWatcher {
     var current = ""
-    var cursorPosition = 0
     val watcher = object : TextWatcher {
-        override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
-            cursorPosition = start + after
-        }
-
+        override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
         override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) = Unit
         override fun afterTextChanged(editable: Editable?) {
             if (editable.toString() != current) {

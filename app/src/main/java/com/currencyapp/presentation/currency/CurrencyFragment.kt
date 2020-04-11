@@ -44,7 +44,10 @@ class CurrencyFragment : Fragment() {
     private fun setObservers(view: View) {
         viewModel.currencyList.observeNotNull(viewLifecycleOwner) { currencyList ->
             mAdapter.updateItems(currencyList)
-            rviList.scrollToPosition(0)
+            if (viewModel.scrollToTopFlag) {
+                rviList.scrollToPosition(0)
+                viewModel.scrollToTopFlag = false
+            }
         }
         viewModel.errorMessage.observeEventNotHandled(viewLifecycleOwner) {
             showAlertDialog(it, getString(R.string.e_generic_button_label_try_again)) {
@@ -66,8 +69,7 @@ class CurrencyFragment : Fragment() {
     }
 
     private fun resumeSearch() {
-        //TODO: Testar falha em conexao pra ver se nao abre varios dialogs
-        viewModel.loadLatestCurrency()
+        viewModel.startJobs()
     }
 
     private fun setRecycleView(view: View) {
@@ -94,6 +96,7 @@ class CurrencyFragment : Fragment() {
         buttonLabel: String?,
         listener: () -> (Unit)?
     ) {
+        dialog?.dismiss()
         dialog = AlertDialog.Builder(requireContext())
             .setTitle(requireContext().getString(R.string.e_generic_title))
             .setMessage(message)
@@ -101,7 +104,6 @@ class CurrencyFragment : Fragment() {
             .setPositiveButton(
                 buttonLabel
             ) { _, _ -> listener.invoke() }.show()
-        dialog?.dismiss()
         dialog?.show()
     }
 }

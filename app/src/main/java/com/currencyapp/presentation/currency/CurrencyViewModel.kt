@@ -18,7 +18,6 @@ class CurrencyViewModel(
 ) : ViewModel() {
     private val _defaultCurrency =
         Currency("EUR", "Germany", 1.0, "file:///android_asset/flags/eu.png")
-
     private var _currencyBase: Currency? = _defaultCurrency
     val errorNetwork = MutableLiveData<Event<Boolean>>()
     val hideKeyBoard = MutableLiveData<Event<Boolean>>()
@@ -27,13 +26,13 @@ class CurrencyViewModel(
     var scrollToTopFlag = false
     val onItemClickListener: (Currency) -> (Unit) = { clickedCurrency ->
         if (_currencyBase != clickedCurrency) {
-            _currencyBase = clickedCurrency.copy(rate = _currencyBase?.rate?: 1.0)
+            _currencyBase = clickedCurrency.copy(rate = _currencyBase?.rate ?: 1.0)
             hideKeyBoard.value = Event(true)
-            scrollToTopFlag = _currencyBase?.code == clickedCurrency.code
+            scrollToTopFlag = true
             loadLatestCurrency()
         }
     }
-    private var _job: Job? = null
+    private var _jobList: MutableList<Job> = mutableListOf()
 
     val onTextListener: (String) -> (Unit) = { newRate ->
         if (newRate.isNotBlank() && _currencyBase?.rate != newRate.toDoubleOrNull()) {
@@ -43,30 +42,14 @@ class CurrencyViewModel(
     }
 
     init {
-        viewModelScope.launch {
-//            autoUpdateCurrencyListJob()
-            loadLatestCurrency()
-        }
+        startJobs()
     }
 
-    fun loadLatestCurrency() {
-        val code = _currencyBase?.code ?: _defaultCurrency.code
-        _job = viewModelScope.launch {
-            when (val result = repository.loadLatestCurrency(code)) {
-                is Status.Success -> {
-                    currencyList.value = getCurrencyList(result.response)
-                }
-                is Status.Error -> {
-                    _job?.cancel()
-                    errorMessage.value = Event(result.responseError)
-                }
-                is Status.NetworkError -> {
-                    _job?.cancel()
-                    errorNetwork.value = Event(true)
-                }
-            }
-        }
+    fun startJobs() {
+        autoUpdateCurrencyListJob()
     }
+
+    private fun cancelJobs() = _jobList.forEach { it.cancel() }
 
     private fun getCurrencyList(result: List<Currency>): List<Currency> {
         return mutableListOf<Currency>().apply {
@@ -78,13 +61,31 @@ class CurrencyViewModel(
         }
     }
 
-    private suspend fun autoUpdateCurrencyListJob() {
-        _job?.cancel()
-        _job = viewModelScope.launch {
+    private fun autoUpdateCurrencyListJob() {
+        _jobList.add(viewModelScope.launch {
             while (true) {
                 loadLatestCurrency()
                 delay(UPDATE_DELAY)
             }
-        }
+        })
+    }
+
+    private fun loadLatestCurrency() {
+        val code = _currencyBase?.code ?: _defaultCurrency.code
+        _jobList.add(viewModelScope.launch {
+            when (val result = repository.loadLatestCurrency(code)) {
+                is Status.Success -> {
+                    currencyList.value = getCurrencyList(result.response)
+                }
+                is Status.Error -> {
+                    cancelJobs()
+                    errorMessage.value = Event(result.responseError)
+                }
+                is Status.NetworkError -> {
+                    cancelJobs()
+                    errorNetwork.value = Event(true)
+                }
+            }
+        })
     }
 }
