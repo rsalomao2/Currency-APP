@@ -42,14 +42,7 @@ class CurrencyFragment : Fragment() {
 
     private fun setObservers(view: View) {
         viewModel.currencyList.observeNotNull(viewLifecycleOwner) { currencyList ->
-            mAdapter.submitList(currencyList) {
-                val scrollToTop = viewModel.scrollToTopFlag
-                if (scrollToTop) {
-                    view.rviList.scrollToPosition(0)
-                    viewModel.scrollToTopFlag = false
-                }
-
-            }
+            mAdapter.updateItems(currencyList)
         }
         viewModel.errorMessage.observeEventNotHandled(viewLifecycleOwner) {
             showAlertDialog(it, getString(R.string.e_generic_button_label_try_again)) {
@@ -64,15 +57,15 @@ class CurrencyFragment : Fragment() {
                 resumeSearch()
             }
         }
-        viewModel.currencyReference.observeEventNotHandled(viewLifecycleOwner) {
-            viewModel.loadLatestCurrency(it.code)
+
+        viewModel.hideKeyBoard.observeEventNotHandled(viewLifecycleOwner) {
             hideKeyboard(view)
         }
     }
 
     private fun resumeSearch() {
-        val codeReference = viewModel.currencyReference.value?.peekContent()?.code
-        viewModel.loadLatestCurrency(codeReference)
+        //TODO: Testar falha em conexao pra ver se nao abre varios dialogs
+        viewModel.loadLatestCurrency()
     }
 
     private fun setRecycleView(view: View) {

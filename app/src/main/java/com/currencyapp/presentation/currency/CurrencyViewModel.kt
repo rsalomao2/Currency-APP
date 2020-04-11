@@ -4,7 +4,6 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.currencyapp.data.remote.repository.CurrencyRepository
-import com.currencyapp.data.extension.mutableLiveData
 import com.currencyapp.domain.model.Currency
 import com.currencyapp.domain.model.Event
 import com.currencyapp.domain.model.Status
@@ -19,41 +18,41 @@ class CurrencyViewModel(
 ) : ViewModel() {
     private val _defaultCurrency =
         Currency("EUR", "Germany", 1.0, "file:///android_asset/flags/eu.png")
-    val currencyReference = mutableLiveData(Event(_defaultCurrency))
+
+    private var _currencyBase: Currency? = _defaultCurrency
     val errorNetwork = MutableLiveData<Event<Boolean>>()
+    val hideKeyBoard = MutableLiveData<Event<Boolean>>()
     val currencyList = MutableLiveData<List<Currency>>()
     val errorMessage = MutableLiveData<Event<String>>()
     var scrollToTopFlag = false
     val onItemClickListener: (Currency) -> (Unit) = { clickedCurrency ->
-        if (_currencyReference != clickedCurrency) {
-            val currencyReferenceRate =
-                _currencyReference?.rate ?: _defaultCurrency.rate
-            val updatedReferenceCurrency = clickedCurrency.copy(rate = currencyReferenceRate)
-            currencyReference.value = Event(updatedReferenceCurrency)
-            scrollToTopFlag = _currencyReference?.code == clickedCurrency.code
+        if (_currencyBase != clickedCurrency) {
+            _currencyBase = clickedCurrency.copy(rate = _currencyBase?.rate?: 1.0)
+            hideKeyBoard.value = Event(true)
+            scrollToTopFlag = _currencyBase?.code == clickedCurrency.code
+            loadLatestCurrency()
         }
     }
     private var _job: Job? = null
-    private val _currencyReference: Currency? get() = currencyReference.value?.peekContent()
 
     val onTextListener: (String) -> (Unit) = { newRate ->
-        if (newRate.isNotBlank() && _currencyReference?.rate != newRate.toDoubleOrNull()){
-            val currencyReferenceWithRateUpdated =
-                _currencyReference?.copy(rate = newRate.toDoubleOrNull() ?: 1.0)
-                    ?: _defaultCurrency.copy(rate = newRate.toDoubleOrNull() ?: 1.0)
-            currencyReference.value = Event(currencyReferenceWithRateUpdated)
+        if (newRate.isNotBlank() && _currencyBase?.rate != newRate.toDoubleOrNull()) {
+            _currencyBase?.rate = newRate.toDouble()
+            loadLatestCurrency()
         }
     }
 
     init {
         viewModelScope.launch {
-            autoUpdateCurrencyListJob()
+//            autoUpdateCurrencyListJob()
+            loadLatestCurrency()
         }
     }
 
-    fun loadLatestCurrency(code: String?) {
+    fun loadLatestCurrency() {
+        val code = _currencyBase?.code ?: _defaultCurrency.code
         _job = viewModelScope.launch {
-            when (val result = repository.loadLatestCurrency(code ?: _defaultCurrency.code)) {
+            when (val result = repository.loadLatestCurrency(code)) {
                 is Status.Success -> {
                     currencyList.value = getCurrencyList(result.response)
                 }
@@ -71,7 +70,7 @@ class CurrencyViewModel(
 
     private fun getCurrencyList(result: List<Currency>): List<Currency> {
         return mutableListOf<Currency>().apply {
-            val baseCurrency = _currencyReference ?: _defaultCurrency
+            val baseCurrency = _currencyBase ?: _defaultCurrency
             add(baseCurrency)
             result.map {
                 add(Currency(it.code, it.country, it.rate * baseCurrency.rate, it.iconUrl))
@@ -83,9 +82,7 @@ class CurrencyViewModel(
         _job?.cancel()
         _job = viewModelScope.launch {
             while (true) {
-                val referenceCode =
-                    _currencyReference?.code ?: _defaultCurrency.code
-                loadLatestCurrency(referenceCode)
+                loadLatestCurrency()
                 delay(UPDATE_DELAY)
             }
         }

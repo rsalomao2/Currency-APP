@@ -5,21 +5,19 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.recyclerview.widget.DiffUtil
-import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.currencyapp.R
 import com.currencyapp.domain.model.Currency
 import com.currencyapp.presentation.util.afterTextChanged
-import com.currencyapp.presentation.util.formatToCurrency
+import com.currencyapp.presentation.util.formatCurrency
 import kotlinx.android.synthetic.main.layout_currency_list_item.view.*
 
 class CurrencyListAdapter(
     private val clickListener: (Currency) -> (Unit),
-    private val textListener: (String) -> (Unit)
-) : ListAdapter<Currency, CurrencyListAdapter.ViewHolder>(
-    CurrencyDiffCallback
-) {
+    private val textListener: (String) -> (Unit),
+    private val items: MutableList<Currency> = mutableListOf()
+) : RecyclerView.Adapter<CurrencyListAdapter.ViewHolder>() {
 
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -30,8 +28,18 @@ class CurrencyListAdapter(
         )
     }
 
+    override fun getItemCount(): Int = items.count()
+
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.bindView(getItem(position))
+        holder.bindView(items[position])
+    }
+
+    fun updateItems(newCurrencies: List<Currency>) {
+        val diffResult: DiffUtil.DiffResult =
+            DiffUtil.calculateDiff(CurrencyDiffCallback(items, newCurrencies))
+        items.clear()
+        items.addAll(newCurrencies)
+        diffResult.dispatchUpdatesTo(this)
     }
 
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -40,7 +48,7 @@ class CurrencyListAdapter(
             itemView.tvCurrency.text = currency.code
             itemView.tvCurrencyCountry.text = currency.country
             itemView.ivThumbnail.loadImageFromRate(currency.iconUrl)
-            itemView.etRate.setText(currency.rate.toString().formatToCurrency())
+            itemView.etRate.setText(formatCurrency(currency.rate))
             itemView.setOnClickListener {
                 clickListener.invoke(currency)
             }
@@ -56,20 +64,17 @@ class CurrencyListAdapter(
         }
     }
 
-    private object CurrencyDiffCallback : DiffUtil.ItemCallback<Currency>() {
-        override fun areItemsTheSame(oldItem: Currency, newItem: Currency): Boolean {
-            return oldItem.code == newItem.code
-        }
+    class CurrencyDiffCallback(
+        private val oldCurrencies: List<Currency>,
+        private val newCurrencies: List<Currency>
+    ) : DiffUtil.Callback() {
 
-        override fun areContentsTheSame(oldItem: Currency, newItem: Currency): Boolean {
-            return oldItem == newItem
-        }
+        override fun getOldListSize() = oldCurrencies.size
+        override fun getNewListSize() = newCurrencies.size
+        override fun areItemsTheSame(oldPos: Int, newPos: Int) =
+            oldCurrencies[oldPos].code == newCurrencies[newPos].code
 
-        override fun getChangePayload(oldItem: Currency, newItem: Currency): Any? {
-            if (oldItem == newItem) {
-                return null
-            }
-            return Unit
-        }
+        override fun areContentsTheSame(oldPos: Int, newPos: Int) =
+            oldCurrencies[oldPos].rate == newCurrencies[newPos].rate
     }
 }
