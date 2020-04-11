@@ -11,9 +11,9 @@ import com.currencyapp.domain.model.Event
 import com.currencyapp.domain.model.Status
 import com.currencyapp.presentation.currency.CurrencyFixture.mockClickedItem
 import com.currencyapp.presentation.currency.CurrencyFixture.mockCode
-import com.currencyapp.presentation.currency.CurrencyFixture.mockCurrency
 import com.currencyapp.presentation.currency.CurrencyFixture.mockErrorMessage
 import com.currencyapp.presentation.currency.CurrencyFixture.mockFinalListOfCurrency
+import com.currencyapp.presentation.currency.CurrencyFixture.mockNewRateValue
 import com.currencyapp.presentation.currency.CurrencyFixture.mockResponseList
 import com.nhaarman.mockitokotlin2.given
 import com.nhaarman.mockitokotlin2.refEq
@@ -49,13 +49,10 @@ class CurrencyViewModelTest{
     private lateinit var currencyListObserver: Observer<List<Currency>>
 
     @Mock
-    private lateinit var currencyObserver: Observer<Event<Currency>>
-
-    @Mock
     private lateinit var stringObserver: Observer<Event<String>>
 
     @Mock
-    private lateinit var booleanObserver: Observer<Event<Boolean>>
+    private lateinit var booleanEventObserver: Observer<Event<Boolean>>
 
     @Mock
     private lateinit var testCoroutineDispatcher: CoroutineDispatcher
@@ -84,17 +81,31 @@ class CurrencyViewModelTest{
     }
 
     @Test
+    fun `scroll top when click on item`() {
+        viewModel.onItemClickListener.invoke(mockClickedItem)
+        assertTrue(viewModel.scrollToTopFlag)
+    }
+
+    @Test
+    fun `hide keyboard when click in a item`() {
+        viewModel.onItemClickListener.invoke(mockClickedItem)
+        viewModel.hideKeyBoard.observe(lifecycleOwner, booleanEventObserver)
+        verify(booleanEventObserver).onChanged(refEq(Event(true)))
+    }
+
+    @Test
+    fun `change currency base rate while enter new value`() =  runBlocking {
+        whenever(repository.loadLatestCurrency(mockCode)).thenReturn(Status.Success(mockResponseList))
+        viewModel.onTextListener.invoke(mockNewRateValue)
+        assertTrue(viewModel.currencyList.value?.first()?.rate == mockNewRateValue.toDouble())
+    }
+
+    @Test
     fun `emmit changes on currency list if success`() = runBlocking {
         whenever(repository.loadLatestCurrency(mockCode)).thenReturn(Status.Success(mockResponseList))
         viewModel.currencyList.observe(lifecycleOwner, currencyListObserver)
         viewModel.startJobs()
         verify(currencyListObserver).onChanged(mockFinalListOfCurrency)
-    }
-
-    @Test
-    fun `scroll top when click on item`() {
-        viewModel.onItemClickListener.invoke(mockClickedItem)
-        assertTrue(viewModel.scrollToTopFlag)
     }
 
     @Test
@@ -108,8 +119,8 @@ class CurrencyViewModelTest{
     @Test
     fun `emmit network error message when request connection lost`() = runBlocking {
         whenever(repository.loadLatestCurrency(mockCode)).thenReturn(Status.NetworkError)
-        viewModel.errorNetwork.observe(lifecycleOwner, booleanObserver)
+        viewModel.errorNetwork.observe(lifecycleOwner, booleanEventObserver)
         viewModel.startJobs()
-        verify(booleanObserver).onChanged(refEq(Event(true)))
+        verify(booleanEventObserver).onChanged(refEq(Event(true)))
     }
 }

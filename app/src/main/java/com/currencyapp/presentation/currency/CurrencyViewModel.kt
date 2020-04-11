@@ -32,14 +32,14 @@ class CurrencyViewModel(
             loadLatestCurrency()
         }
     }
-    private var _jobList: MutableList<Job> = mutableListOf()
-
     val onTextListener: (String) -> (Unit) = { newRate ->
         if (newRate.isNotBlank() && _currencyBase?.rate != newRate.toDoubleOrNull()) {
             _currencyBase?.rate = newRate.toDouble()
             loadLatestCurrency()
         }
     }
+
+    private var _jobList: MutableList<Job> = mutableListOf()
 
     init {
         startJobs()
