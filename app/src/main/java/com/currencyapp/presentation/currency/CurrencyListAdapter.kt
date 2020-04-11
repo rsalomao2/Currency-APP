@@ -19,20 +19,17 @@ class CurrencyListAdapter(
     private val items: MutableList<Currency> = mutableListOf()
 ) : RecyclerView.Adapter<CurrencyListAdapter.ViewHolder>() {
 
-
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         return ViewHolder(
-            LayoutInflater.from(parent.context).inflate(
-                R.layout.layout_currency_list_item, parent, false
-            )
+            LayoutInflater.from(parent.context)
+                .inflate(R.layout.layout_currency_list_item, parent, false)
         )
     }
 
     override fun getItemCount(): Int = items.count()
 
-    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) =
         holder.bindView(items[position])
-    }
 
     fun updateItems(newCurrencies: List<Currency>) {
         val diffResult: DiffUtil.DiffResult =
@@ -64,7 +61,7 @@ class CurrencyListAdapter(
         }
     }
 
-    class CurrencyDiffCallback(
+    inner class CurrencyDiffCallback(
         private val oldCurrencies: List<Currency>,
         private val newCurrencies: List<Currency>
     ) : DiffUtil.Callback() {
