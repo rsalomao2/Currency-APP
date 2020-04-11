@@ -1,9 +1,7 @@
 <resources>
     <string name="app_name">Currency App</string>
 
-    <string name="default_rate">0.00</string>
     <string name="e_generic_title">Oops</string>
-    <string name="e_generic_button_positve_label">OK</string>
     <string name="e_generic_button_label_try_again">Try Again</string>
     <string name="e_generic_network_text">Check you internet connection</string>
 </resources>

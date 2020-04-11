@@ -27,5 +27,5 @@ internal inline fun <reified T> createRetrofit(okHttpClient: OkHttpClient): T {
         .client(okHttpClient)
         .build()
 
-    return retrofit.create<T>(T::class.java)
+    return retrofit.create(T::class.java)
 }
