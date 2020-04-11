@@ -80,6 +80,7 @@ class CurrencyFragment : Fragment() {
                 false
             }
             setHasFixedSize(true)
+            itemAnimator = null
         }
     }
 
