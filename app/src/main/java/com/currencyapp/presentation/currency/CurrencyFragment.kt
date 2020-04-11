@@ -13,7 +13,8 @@ import com.currencyapp.R
 import com.currencyapp.data.di.injectCurrencyModules
 import com.currencyapp.data.extension.observeEventNotHandled
 import com.currencyapp.data.extension.observeNotNull
-import kotlinx.android.synthetic.main.fragment_currency.view.*
+import kotlinx.android.synthetic.main.fragment_currency.*
+import kotlinx.android.synthetic.main.fragment_currency.view.rviList
 import org.koin.android.viewmodel.ext.android.viewModel
 
 class CurrencyFragment : Fragment() {
@@ -43,6 +44,7 @@ class CurrencyFragment : Fragment() {
     private fun setObservers(view: View) {
         viewModel.currencyList.observeNotNull(viewLifecycleOwner) { currencyList ->
             mAdapter.updateItems(currencyList)
+            rviList.scrollToPosition(0)
         }
         viewModel.errorMessage.observeEventNotHandled(viewLifecycleOwner) {
             showAlertDialog(it, getString(R.string.e_generic_button_label_try_again)) {
