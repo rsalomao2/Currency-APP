@@ -3,9 +3,12 @@ package com.currencyapp.presentation.util
 import android.text.Editable
 import android.text.TextWatcher
 import android.widget.EditText
+import java.text.DecimalFormat
+import java.text.DecimalFormatSymbols
 import java.text.NumberFormat
+import java.util.*
 
-internal fun EditText.afterTextChanged(textResult: (String) -> Unit): TextWatcher {
+internal fun EditText.afterTextChanged(action: (String) -> Unit): TextWatcher {
     var current = ""
     var cursorPosition = 0
     val watcher = object : TextWatcher {
@@ -14,37 +17,44 @@ internal fun EditText.afterTextChanged(textResult: (String) -> Unit): TextWatche
         }
 
         override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) = Unit
-        override fun afterTextChanged(s: Editable?) {
-            if (s.toString() != current) {
+        override fun afterTextChanged(editable: Editable?) {
+            if (editable.toString() != current) {
                 removeTextChangedListener(this)
-                current = s.toString().formatToCurrency()
-                setText(current)
-                if (hasFocus()) {
-                    setCursorPosition()
-                    textResult.invoke(current.replace(",", ""))
+
+                var cleanString = editable.toString().replace("[,.\\s]".toRegex(), "")
+
+                if (cleanString.length >= 15) {
+                    cleanString = cleanString.substring(0, cleanString.length - 1)
                 }
+
+                val parsed = if (cleanString.isEmpty()) 0.0 else cleanString.toDouble()
+
+                val formatted = formatCurrency(parsed / 100)
+
+                current = formatted
+
+                val filters = editable?.filters
+                editable?.filters = arrayOf()
+                editable?.clear()
+                editable?.append(current)
+                editable?.filters = filters
+
+                action.invoke((parsed / 100.0).toString().replace("$", ""))
+
                 addTextChangedListener(this)
             }
         }
-
-        private fun setCursorPosition() {
-            if (cursorPosition <= current.length) {
-                setSelection(cursorPosition)
-            } else
-                setSelection(cursorPosition)
-        }
     }
+
     addTextChangedListener(watcher)
     return watcher
 }
 
-private val currencyFormatter = NumberFormat.getCurrencyInstance()
-private val symbol = currencyFormatter.currency.symbol
-private const val CURRENCY_PATTERN = "%.2f"
-fun String.formatToCurrency(): String {
-    val force2DecimalDigits = CURRENCY_PATTERN.format(this.replace(",","").toDouble())
-    val cleanString = force2DecimalDigits.replace(".", "").replace(",", "")
-    val parsed = cleanString.toDoubleOrNull() ?: 0.0
-    val formatted = currencyFormatter.format((parsed / 100))
-    return formatted.replace(symbol, "")
+private fun getCurrencyIns(): NumberFormat {
+    return DecimalFormat("#,##0.00", DecimalFormatSymbols(Locale.getDefault()))
 }
+
+fun formatCurrency(price: Double): String {
+    return getCurrencyIns().format(price)
+}
+
