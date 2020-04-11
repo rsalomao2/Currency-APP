@@ -1,6 +1,5 @@
 package com.currencyapp.presentation.currency
 
-import android.app.AlertDialog
 import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -13,8 +12,9 @@ import com.currencyapp.R
 import com.currencyapp.data.di.injectCurrencyModules
 import com.currencyapp.data.extension.observeEventNotHandled
 import com.currencyapp.data.extension.observeNotNull
+import com.currencyapp.presentation.util.showAlertDialog
 import kotlinx.android.synthetic.main.fragment_currency.*
-import kotlinx.android.synthetic.main.fragment_currency.view.rviList
+import kotlinx.android.synthetic.main.fragment_currency.view.*
 import org.koin.android.viewmodel.ext.android.viewModel
 
 class CurrencyFragment : Fragment() {
@@ -50,17 +50,16 @@ class CurrencyFragment : Fragment() {
             }
         }
         viewModel.errorMessage.observeEventNotHandled(viewLifecycleOwner) {
-            showAlertDialog(it, getString(R.string.e_generic_button_label_try_again)) {
-                resumeSearch()
-            }
+            showAlertDialog(
+                it,
+                getString(R.string.e_generic_button_label_try_again),
+                this::resumeSearch)
         }
         viewModel.errorNetwork.observeNotNull(viewLifecycleOwner) {
             showAlertDialog(
                 getString(R.string.e_generic_network_text),
-                getString(R.string.e_generic_button_label_try_again)
-            ) {
-                resumeSearch()
-            }
+                getString(R.string.e_generic_button_label_try_again),
+                this::resumeSearch)
         }
 
         viewModel.hideKeyBoard.observeEventNotHandled(viewLifecycleOwner) {
@@ -88,22 +87,5 @@ class CurrencyFragment : Fragment() {
         val imm: InputMethodManager? =
             requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager?
         imm?.hideSoftInputFromWindow(v.windowToken, 0)
-    }
-
-    private var dialog: AlertDialog? = null
-    private fun showAlertDialog(
-        message: String,
-        buttonLabel: String?,
-        listener: () -> (Unit)?
-    ) {
-        dialog?.dismiss()
-        dialog = AlertDialog.Builder(requireContext())
-            .setTitle(requireContext().getString(R.string.e_generic_title))
-            .setMessage(message)
-            .setCancelable(false)
-            .setPositiveButton(
-                buttonLabel
-            ) { _, _ -> listener.invoke() }.show()
-        dialog?.show()
     }
 }

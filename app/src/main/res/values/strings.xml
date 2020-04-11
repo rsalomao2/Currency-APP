@@ -3,5 +3,5 @@
 
     <string name="e_generic_title">Oops</string>
     <string name="e_generic_button_label_try_again">Try Again</string>
-    <string name="e_generic_network_text">Check you internet connection</string>
+    <string name="e_generic_network_text">Looks like you have NO INTERNET ACCESS. Please check you internet connection and try again.</string>
 </resources>
